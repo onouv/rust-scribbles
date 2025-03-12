@@ -48,6 +48,8 @@ trait Inport {
 // So we model the state types explicitly. We keep the actual data and low-level behavior in a 
 // separate instance ( here of type ToolEntity) and pass is into tuple structs representing 
 // the different states of the tool.
+/// A tool in the state when it has been actively commanded to stop processing.
+/// This state guarantees en empty process, but parts may remain in the input ports and/or output ports. 
 struct Stopped(ToolEntity); // nice and short
 impl Stopped {
     pub fn new(entity: ToolEntity) -> Self {
@@ -56,6 +58,9 @@ impl Stopped {
     }
 }
 
+/// A tool in a state which prevents it from running:
+/// - empty input port
+/// - full output port
 struct Idle(ToolEntity);    
 
 // PROBLEM HERE 
@@ -87,6 +92,10 @@ impl Idle {
     // }
 }
 
+/// A tool in a state where it is actively processing parts.
+/// - input port may contain parts
+/// - output port may contain parts
+/// - process guaranteed to contain a part
 struct Running(ToolEntity); 
 impl Running {
     pub fn new(entity: ToolEntity) -> Self {
@@ -94,6 +103,10 @@ impl Running {
     }
 }
 
+/// A tool when a fault has occurred that prevents it from running.
+/// - input port may contain parts, no further parts can be loaded
+/// - output port may contain parts and parts may be unloaded
+/// - process may contain a part and may be in an inconsistent process step or be incomplete
 struct Faulted(ToolEntity); 
 
 impl Faulted {
@@ -102,8 +115,7 @@ impl Faulted {
     }
 }
 
-//e machine acts on the ToolEntity instance accordingly. 
-//
+/// The actual state machine.
 pub enum Tool {
     Stopped(Stopped),
     Idle(Idle),
