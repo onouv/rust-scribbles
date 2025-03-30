@@ -1,24 +1,18 @@
+use actix::prelude::*;
 
-mod tool;
-use tool::*;
+mod ping;
+use ping::{ PingActor, PingCfg };
 
-// mod state_2;
-// use state_2::state_machine;
+mod pong;
+use pong::*;
 
-fn main() {
-    let tool = Tool::new("1");
-    println!("{}", tool);
+#[actix::main]
+async fn main() {
+    let ping = PingActor::new().start();
+    let pong = PongActor::new(ping.clone().recipient()).start();
 
-    let tool = tool.handle(Signal::Start);
-    println!("{}", tool);
-    
-    let tool = tool.handle(Signal::LoadPart(Part {}));
-    println!("{}", tool);
-    let tool = tool.handle(tool::signal::Signal::LoadPart(Part {}));
-    println!("{}", tool);
-    let tool = tool.handle(tool::signal::Signal::LoadPart(Part {}));
-    println!("{}", tool);
-    // let tool = tool.stop
+    _ = ping.send(PingCfg { pong: pong.clone().recipient() }).await;
 
-    // state_machine(12);
+    tokio::signal::ctrl_c().await.unwrap();
+
 }
