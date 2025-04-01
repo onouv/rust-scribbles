@@ -2,16 +2,42 @@ use actix::prelude::*;
 
 #[derive(Message)]
 #[rtype(result = "CheckCanDoResp")]
-pub struct CheckCanDoReq;
+pub struct CheckReq;
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct CheckCanDoResp { can_do: bool }
+pub struct CheckResp { pub can_do: bool }
 
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct Config {
-    pub upstream_check: Option<Recipient<CheckCanDoResp>>,
-    pub downstream_check: Option<Recipient<CheckCanDoReq>>
+pub struct SourceConfig {
+    pub downstream_check: Recipient<CheckReq>,
+    pub downstream_service: Recipient<ServiceReq>
 }
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct InlineConfig {
+    pub upstream_check: Recipient<CheckResp>,
+    pub downstream_check: Recipient<CheckReq>
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct SinkConfig {
+    pub upstream_check: Recipient<CheckResp>
+}
+
+#[derive(Message)]
+#[rtype(result = "ServiceResult")]
+pub struct ServiceReq {
+    pub data: String
+}
+
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct ServiceResult {
+    pub result: String
+};
