@@ -4,7 +4,7 @@ use actix::prelude::*;
 use super::messages::{CheckReq, CheckResp, InlineConfig, ServiceReq, ServiceResult};
 
 pub struct ServiceA {
-    upstream_check: Option<Recipient<CheckResp>>,
+    //upstream_check: Option<Recipient<CheckResp>>,
     downstream_check: Option<Recipient<CheckReq>>,
     can_do: bool,
 }
@@ -16,7 +16,7 @@ impl Actor for ServiceA {
 impl ServiceA {
     pub fn new() -> Self {
         Self {
-            upstream_check: None,
+            //upstream_check: None,
             downstream_check: None,
             can_do: true,
         }

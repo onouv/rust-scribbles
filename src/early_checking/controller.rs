@@ -2,7 +2,7 @@ use std::{future::Future, process::Output};
 
 use actix::prelude::*;
 
-use super::messages::{CheckReq, CheckResp, Config, ServiceReq, SourceConfig};
+use super::messages::{CheckReq, CheckResp, ServiceReq, SourceConfig};
 
 pub struct Controller {
     downstream_check: Option<Recipient<CheckReq>>,
