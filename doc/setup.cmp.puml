@@ -1,0 +1,16 @@
+@startuml Setup
+
+component main
+component Service <<Facade>>
+component Controller <<Actor>>
+component ServiceA <<Actor>>
+component ServiceB <<Actor>>
+component ServiceC <<Actor>>
+
+
+main -> Service
+Service -> Controller
+Controller -down-> ServiceA
+ServiceA ->ServiceB
+ServiceB -> ServiceC
+@enduml

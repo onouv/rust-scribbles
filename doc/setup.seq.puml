@@ -1,0 +1,57 @@
+@startuml Setup
+
+participant main
+participant Service as S
+participant Controller  as CT
+participant ServiceA  as A
+participant ServiceB  as B
+participant ServiceC  as C
+
+activate main
+main --> S: new()
+activate S
+S -> CT **: create
+S -> A **: create
+S -> B **: create
+S -> C **: create
+main <-- S
+deactivate S
+
+hnote across: Service configures interconnections
+
+main --> S: do_me_a_service()
+activate S
+S -> CT: send(Start)
+activate CT
+CT -> A: send(CheckReq)
+activate A
+A -->> A: can_do() -> true
+A -> B: send(CheckReq)
+activate B
+B -->> B: can_do() -> true
+B -> C: send(CheckReq)
+activate C
+C -->> C: can_do() -> true
+B <- C: send(CheckResp { can_do: true }))
+deactivate C
+A <- B: send(CheckResp { can_do: true }))
+deactivate B
+CT <- A: send(CheckResp { can_do: true }))
+deactivate A
+CT -> A: send(ServiceReq)
+activate A
+A -> B: send(ServiceReq)
+activate B
+B -> C: send(ServiceReq)
+activate C
+C -->> C: process request
+B <- C: send(ServiceResp)
+deactivate C
+A <- B: send(ServiceResp)
+deactivate B
+CT <- A: send(ServiceResp)
+deactivate A
+S <-- CT 
+main <-- S: result
+main -->> main: println!(result)
+@enduml
