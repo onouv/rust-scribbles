@@ -54,6 +54,7 @@ deactivate A
 S <-- CT 
 deactivate CT
 main <-- S: result
+deactivate S
 main -->> main: println!(result)
 
 @enduml
