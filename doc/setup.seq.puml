@@ -52,6 +52,8 @@ deactivate B
 CT <- A: send(ServiceResp)
 deactivate A
 S <-- CT 
+deactivate CT
 main <-- S: result
 main -->> main: println!(result)
+
 @enduml
