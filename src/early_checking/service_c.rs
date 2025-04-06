@@ -1,9 +1,8 @@
 use actix::prelude::*;
 
-use super::messages::{CheckReq, CheckResp, Config};
+use super::messages::{CheckReq, CheckResp, ServiceReq, ServiceResult};
 
 pub struct ServiceC {
-    upstream_check: Option<Recipient<CheckResp>>,
     can_do: bool,
 }
 
@@ -14,13 +13,12 @@ impl Actor for ServiceC {
 impl ServiceC {
     pub fn new() -> Self {
         Self {
-            upstream_check: None,
             can_do: true,
         }
     }
 
     fn can_do(&mut self) -> bool {
-        self.can_do = !self.can_do;
+        // self.can_do = !self.can_do;
         self.can_do
     }
 }
@@ -28,43 +26,31 @@ impl ServiceC {
 impl Handler<CheckReq> for ServiceC {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, msg: CheckReq, ctx: &mut Self::Context) -> Self::Result {
-        let upstream = self.upstream_check.clone();
-        Box::pin(actix::fut::wrap_future(async move {
-            match upstream {
-                Some(rcp) => {
-                    let can_do = true; // Replace with actual check
-                    let resp = CheckResp { can_do };
-                    rcp.send(resp).await.unwrap();
-                }
-                None => {
-                    println!("ServiceC: No upstream to respond to.");
-                }
-            }
-            Ok(())
-        }))
-    }
-}
+    fn handle(&mut self, msg: CheckReq, _ctx: &mut Self::Context) -> Self::Result {
+        println!("Service C processing CheckReq...");
 
-impl Handler<CheckResp> for ServiceC {
-    type Result = ();
-
-    fn handle(&mut self, msg: CheckResp, ctx: &mut Self::Context) -> Self::Result {
-        println!("ServiceC received CheckCanDoResp: {}", msg.can_do);
-    }
-}
-
-impl Handler<Config> for ServiceC {
-    type Result = ();
-
-    fn handle(&mut self, msg: Config, ctx: &mut Self::Context) -> Self::Result {
-        println!("ServiceC configured.");
-
-        match msg.upstream_check {
-            Some(rcp) => {
-                self.upstream_check = Some(rcp);
-            }
-            _ => {}
+        if self.can_do() {
+            println!("Service C: can provide service.");
+            let _ = msg.reply_with.send(CheckResp { can_do: true});
+        } else {
+            println!("Service C: cannot provide service !");
+            let _ = msg.reply_with.send(CheckResp { can_do: false});
         }
+
+        // since we reply with the recipient delivereed in the msg, we always just return ()
+        return Box::pin(async { () }.into_actor(self));
+    }
+}
+
+impl Handler<ServiceReq> for ServiceC {
+    type Result = Result<ServiceResult, String>;
+    fn handle(&mut self, msg: ServiceReq, _ctx: &mut Self::Context) -> Self::Result {
+        println!("Service C received ServiceReq: {}", msg.data);
+        
+        // this Service never fails...
+        Ok(ServiceResult { 
+            result: format!("{}: Service C", msg.data)
+        })
+            
     }
 }

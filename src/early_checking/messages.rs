@@ -1,8 +1,12 @@
 use actix::prelude::*;
+use tokio::sync::oneshot::Sender;
+use super::controller::ServiceError;
 
 #[derive(Message)]
-#[rtype(result = "CheckCanDoResp")]
-pub struct CheckReq;
+#[rtype(result = "()")]
+pub struct CheckReq {
+    pub reply_with: Sender<CheckResp>
+}
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -19,18 +23,16 @@ pub struct SourceConfig {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct InlineConfig {
-    pub upstream_check: Recipient<CheckResp>,
-    pub downstream_check: Recipient<CheckReq>
+    pub downstream_check: Recipient<CheckReq>,
+    pub downstream_service: Recipient<ServiceReq>
 }
 
 #[derive(Message)]
-#[rtype(result = "()")]
-pub struct SinkConfig {
-    pub upstream_check: Recipient<CheckResp>
-}
+#[rtype(result = "Result<(), ServiceError>")]
+pub struct Start {}
 
 #[derive(Message)]
-#[rtype(result = "ServiceResult")]
+#[rtype(result = "Result<ServiceResult, String>")]
 pub struct ServiceReq {
     pub data: String
 }
@@ -40,4 +42,4 @@ pub struct ServiceReq {
 #[rtype(result = "()")]
 pub struct ServiceResult {
     pub result: String
-};
+}
