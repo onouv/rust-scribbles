@@ -19,7 +19,7 @@ deactivate S
 
 hnote across: Service configures interconnections
 
-main --> S: do_me_a_service()
+main --> S: start_chain()
 activate S
 S -> CT: send(Start)
 activate CT
