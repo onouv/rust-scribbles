@@ -28,3 +28,23 @@ git clone https://github.com/onouv/rust-scribbles.git
 git checkout early-async-checking
 cargo run 
 ```
+The output will demonstrate the interactions of the checking and of the request processing phases for the happy case: 
+
+```
+Controller received Setup message.
+ServiceA configured.
+ServiceB configured.
+Controller received Start message.
+Controller initiating check chain...
+Service A processing CheckReq...
+Service A: Forwarding CheckReq to downstream...
+Service B processing CheckReq...
+Service B: Forwarding CheckReq to downstream...
+Service C processing CheckReq...
+Service C: can provide service.
+Controller: Starting service chain.
+Service A: received ServiceReq: Start
+Service B: received ServiceReq: Start: ServiceA
+Service C received ServiceReq: Start: ServiceA: Service B
+Controller: Start result: "Start: ServiceA: Service B: Service C"
+```
