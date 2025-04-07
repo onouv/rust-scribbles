@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use log::{error, trace};
 
 use super::messages::{CheckReq, CheckResp, InlineConfig, ServiceReq, ServiceResult};
 
@@ -22,7 +23,7 @@ impl ServiceB {
     }
 
     fn can_do(&mut self) -> bool {
-        // self.can_do = !self.can_do;
+        self.can_do = !self.can_do;
         self.can_do
     }
 }
@@ -31,9 +32,9 @@ impl Handler<CheckReq> for ServiceB {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: CheckReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service B processing CheckReq...");
+        trace!("Service B processing CheckReq...");
         if !self.can_do() {
-            println!("Service B: cannot provide service for my own reasons.");
+            trace!("Service B: cannot provide service for my own reasons.");
 
             // Send the response back via the channel
             let _ = msg.reply_with.send(CheckResp { can_do: false });
@@ -41,7 +42,7 @@ impl Handler<CheckReq> for ServiceB {
             return Box::pin(async { () }.into_actor(self));
         }
 
-        println!("Service B: forwarding CheckReq to downstream...");
+        trace!("Service B: forwarding CheckReq to downstream...");
         let downstream = self.downstream_check.clone();
         Box::pin(
             async move {
@@ -62,17 +63,17 @@ impl Handler<CheckReq> for ServiceB {
                                         let _ = msg.reply_with.send(CheckResp { can_do: false });
                                     },
                                     Err(error) => {
-                                        println!("Service A: Error, Failed to receive response while checking service chain: {:?}", error);
+                                        error!("Service A: failed to receive response while checking service chain: {:?}", error);
                                     }
                                 }
                             },
                             Err(error) => {
-                                println!("Service A: Error, could not send request to check service chain: {}", error);
+                                error!("Service A: could not send request to check service chain: {}", error);
                             }
                         }
                     },
                     None => {
-                        println!("Service B: Error, no downstream, cannot provide service.");
+                        error!("Service B: no downstream, cannot provide service.");
                         
                         // Send the response back via the channel
                         let _ = msg.reply_with.send(CheckResp { can_do: false });
@@ -120,6 +121,6 @@ impl Handler<InlineConfig> for ServiceB {
     fn handle(&mut self, msg: InlineConfig, _ctx: &mut Self::Context) -> Self::Result {
         self.downstream_check = Some(msg.downstream_check);
         self.downstream_service = Some(msg.downstream_service);
-        println!("Service B: configured.");
+        trace!("Service B: configured.");
     }
 }

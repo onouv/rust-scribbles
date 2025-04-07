@@ -1,18 +1,21 @@
 mod early_checking;
 use early_checking::Service;
+use log::{error, info};
 
 #[actix::main]
 async fn main() {
     
+    env_logger::init();
+
     let service = Service::new().await;
     
     let result= service.start_chain().await;
     match result {
         Ok(s) => {
-            println!("{}", s);
+            info!("{}", s);
         },
         Err(err) => {
-            println!("{}", err);
+            error!("There has been an error. {err}");
         }
     }
 }

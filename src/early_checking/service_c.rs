@@ -1,4 +1,5 @@
 use actix::prelude::*;
+use log::trace;
 
 use super::messages::{CheckReq, CheckResp, ServiceReq, ServiceResult};
 
@@ -27,13 +28,13 @@ impl Handler<CheckReq> for ServiceC {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: CheckReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service C processing CheckReq...");
+        trace!("Service C processing CheckReq...");
 
         if self.can_do() {
-            println!("Service C: can provide service.");
+            trace!("Service C: can provide service.");
             let _ = msg.reply_with.send(CheckResp { can_do: true});
         } else {
-            println!("Service C: cannot provide service !");
+            trace!("Service C: cannot provide service !");
             let _ = msg.reply_with.send(CheckResp { can_do: false});
         }
 
@@ -45,7 +46,7 @@ impl Handler<CheckReq> for ServiceC {
 impl Handler<ServiceReq> for ServiceC {
     type Result = Result<ServiceResult, String>;
     fn handle(&mut self, msg: ServiceReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service C processing ServiceReq: {}", msg.data);
+        trace!("Service C processing ServiceReq: {}", msg.data);
         
         // this Service never fails...
         Ok(ServiceResult { 

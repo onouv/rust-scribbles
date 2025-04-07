@@ -1,5 +1,6 @@
 
 use actix::prelude::*;
+use log::{error, trace, info};
 use super::messages::{CheckReq, CheckResp, InlineConfig, ServiceReq, ServiceResult};
 
 pub struct ServiceA {
@@ -30,9 +31,9 @@ impl Handler<CheckReq> for ServiceA {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: CheckReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service A processing CheckReq...");
+        trace!("Service A processing CheckReq...");
         if !self.can_do() {
-            println!("Service A: cannot provide service for my own reasons.");
+            info!("Service A: cannot provide service for my own reasons.");
 
             // Send the response back via the channel
             let _ = msg.reply_with.send(CheckResp { can_do: false });
@@ -40,7 +41,7 @@ impl Handler<CheckReq> for ServiceA {
             return Box::pin(async { () }.into_actor(self));
         }
 
-        println!("Service A: forwarding CheckReq to downstream...");
+        trace!("Service A: forwarding CheckReq to downstream...");
         let downstream = self.downstream_check.clone();
         Box::pin(
             async move {
@@ -61,17 +62,17 @@ impl Handler<CheckReq> for ServiceA {
                                         let _ = msg.reply_with.send(CheckResp { can_do: false });
                                     },
                                     Err(error) => {
-                                        println!("Service A: Error, Failed to receive response while checking service chain: {:?}", error);
+                                        error!("Service A: failed to receive response while checking service chain: {:?}", error);
                                     }
                                 }
                             },
                             Err(error) => {
-                                println!("Service A: Error, could not send request to check service chain: {}", error);
+                                error!("Service A: could not send request to check service chain: {}", error);
                             }
                         }
                     },
                     None => {
-                        println!("Service A: No downstream, cannot provide service.");
+                        error!("Service A: no downstream, cannot provide service.");
                         
                         // Send the response back via the channel
                         let _ = msg.reply_with.send(CheckResp { can_do: false });
@@ -86,7 +87,7 @@ impl Handler<ServiceReq> for ServiceA {
     type Result = ResponseActFuture<Self, Result<ServiceResult, String>>;
 
     fn handle(&mut self, msg: ServiceReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service A: received ServiceReq: {}", msg.data);
+        trace!("Service A: received ServiceReq: {}", msg.data);
         let service = self.downstream_service.clone();
 
         Box::pin(
@@ -101,11 +102,17 @@ impl Handler<ServiceReq> for ServiceA {
                                 Ok(res)
                             },
                             Err(err) => {
-                                Err(format!("Error: Service A received downstream {}.", err))
+                                error!("Service A: received downstream error {}.", err);
+
+                                Err(format!("Service A: received downstream error {}.", err))
                             }
                         }
                     }
-                    None => Err(format!("Error: Service A has no downstream service.")),
+                    None => {
+                        error!("Service A: no downstream service.");
+
+                        Err(format!("Service A: no downstream service."))
+                    }
                 }
             }
             .into_actor(self),
@@ -119,6 +126,6 @@ impl Handler<InlineConfig> for ServiceA {
     fn handle(&mut self, msg: InlineConfig, _ctx: &mut Self::Context) -> Self::Result {
         self.downstream_check = Some(msg.downstream_check);
         self.downstream_service = Some(msg.downstream_service);
-        println!("Service A: configured.");
+        trace!("Service A: configured.");
     }
 }

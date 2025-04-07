@@ -1,5 +1,5 @@
-mod facade;
-pub use facade::*;
+mod service;
+pub use service::*;
 
 mod messages;
 mod controller;

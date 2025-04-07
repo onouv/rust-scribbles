@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use actix::prelude::*;
+use log::{error, trace};
 use super::messages::{CheckReq, CheckResp, ServiceReq, SourceConfig, Start};
 
 pub enum ServiceError {
@@ -10,16 +11,16 @@ pub enum ServiceError {
 }
 
 impl Display for ServiceError {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             // ServiceError::Unknown => {
             //     println!("Error: Unknown Error");
             // },
-            ServiceError::ServiceBlocked(s) => {
-                println!("Error: Service Blocked -> {}", s);
+            Self::ServiceBlocked(s) => {
+                _ = write!(f, "Service Blocked -> {s}");
             },
-            ServiceError::ServiceDown(s) => {
-                println!("Error: Service Down -> {}", s);
+            Self::ServiceDown(s) => {
+                error!("Service Down -> {}", s);
             }
         }
 
@@ -49,7 +50,7 @@ impl Handler<Start> for Controller {
     type Result = ResponseActFuture<Self, Result<(), ServiceError>>;
 
     fn handle(&mut self, _msg: Start, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Controller: processing Start message...");
+        trace!("Controller: processing Start message...");
 
         let service = self.downstream_service.clone().unwrap();
 
@@ -57,7 +58,7 @@ impl Handler<Start> for Controller {
         let (tx, rx) = tokio::sync::oneshot::channel::<CheckResp>();
         
         // Initiate the check
-        println!("Controller: initiating check chain...");
+        trace!("Controller: initiating check chain...");
         let check = self.downstream_check.clone().unwrap();
         let check_future = check.send(CheckReq { reply_with: tx });
 
@@ -70,7 +71,7 @@ impl Handler<Start> for Controller {
                             Ok(result) => {
                                 if result.can_do {
                                     // Start the service chain if all services can proceed
-                                    println!("Controller: initiating service chain...");
+                                    trace!("Controller: initiating service chain...");
 
                                     let result = service.send(ServiceReq {
                                         data: "Start".to_string(),
@@ -80,7 +81,7 @@ impl Handler<Start> for Controller {
                                         Ok(res) => {
                                             match res {
                                                 Ok(svc_res) => {
-                                                    println!("Controller: Start result: {:?}", svc_res.result);
+                                                    trace!("Controller: Start result: {:?}", svc_res.result);
                                                     return Ok(());
                                                 },
                                                 Err(err) => {
@@ -119,6 +120,6 @@ impl Handler<SourceConfig> for Controller {
     fn handle(&mut self, msg: SourceConfig, _ctx: &mut Self::Context) -> Self::Result {
         self.downstream_check = Some(msg.downstream_check);
         self.downstream_service = Some(msg.downstream_service);
-        println!("Controller: configured.");
+        trace!("Controller: configured.");
     }
 }
