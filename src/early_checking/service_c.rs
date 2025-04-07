@@ -45,7 +45,7 @@ impl Handler<CheckReq> for ServiceC {
 impl Handler<ServiceReq> for ServiceC {
     type Result = Result<ServiceResult, String>;
     fn handle(&mut self, msg: ServiceReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service C received ServiceReq: {}", msg.data);
+        println!("Service C processing ServiceReq: {}", msg.data);
         
         // this Service never fails...
         Ok(ServiceResult { 

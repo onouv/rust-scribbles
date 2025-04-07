@@ -49,7 +49,7 @@ impl Handler<Start> for Controller {
     type Result = ResponseActFuture<Self, Result<(), ServiceError>>;
 
     fn handle(&mut self, _msg: Start, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Controller received Start message.");
+        println!("Controller: processing Start message...");
 
         let service = self.downstream_service.clone().unwrap();
 
@@ -57,7 +57,7 @@ impl Handler<Start> for Controller {
         let (tx, rx) = tokio::sync::oneshot::channel::<CheckResp>();
         
         // Initiate the check
-        println!("Controller initiating check chain...");
+        println!("Controller: initiating check chain...");
         let check = self.downstream_check.clone().unwrap();
         let check_future = check.send(CheckReq { reply_with: tx });
 
@@ -70,7 +70,7 @@ impl Handler<Start> for Controller {
                             Ok(result) => {
                                 if result.can_do {
                                     // Start the service chain if all services can proceed
-                                    println!("Controller: Starting service chain.");
+                                    println!("Controller: initiating service chain...");
 
                                     let result = service.send(ServiceReq {
                                         data: "Start".to_string(),
@@ -119,6 +119,6 @@ impl Handler<SourceConfig> for Controller {
     fn handle(&mut self, msg: SourceConfig, _ctx: &mut Self::Context) -> Self::Result {
         self.downstream_check = Some(msg.downstream_check);
         self.downstream_service = Some(msg.downstream_service);
-        println!("Controller received Setup message.");
+        println!("Controller: configured.");
     }
 }

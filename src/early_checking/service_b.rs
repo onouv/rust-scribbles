@@ -41,7 +41,7 @@ impl Handler<CheckReq> for ServiceB {
             return Box::pin(async { () }.into_actor(self));
         }
 
-        println!("Service B: Forwarding CheckReq to downstream...");
+        println!("Service B: forwarding CheckReq to downstream...");
         let downstream = self.downstream_check.clone();
         Box::pin(
             async move {
@@ -72,7 +72,7 @@ impl Handler<CheckReq> for ServiceB {
                         }
                     },
                     None => {
-                        println!("Service B: No downstream, cannot provide service.");
+                        println!("Service B: Error, no downstream, cannot provide service.");
                         
                         // Send the response back via the channel
                         let _ = msg.reply_with.send(CheckResp { can_do: false });
@@ -87,7 +87,7 @@ impl Handler<ServiceReq> for ServiceB {
     type Result = ResponseActFuture<Self, Result<ServiceResult, String>>;
 
     fn handle(&mut self, msg: ServiceReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service B: received ServiceReq: {}", msg.data);
+        println!("Service B: processing ServiceReq: {}", msg.data);
         
         let service = self.downstream_service.clone();
         Box::pin(
@@ -120,6 +120,6 @@ impl Handler<InlineConfig> for ServiceB {
     fn handle(&mut self, msg: InlineConfig, _ctx: &mut Self::Context) -> Self::Result {
         self.downstream_check = Some(msg.downstream_check);
         self.downstream_service = Some(msg.downstream_service);
-        println!("ServiceB configured.");
+        println!("Service B: configured.");
     }
 }

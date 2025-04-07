@@ -40,7 +40,7 @@ impl Handler<CheckReq> for ServiceA {
             return Box::pin(async { () }.into_actor(self));
         }
 
-        println!("Service A: Forwarding CheckReq to downstream...");
+        println!("Service A: forwarding CheckReq to downstream...");
         let downstream = self.downstream_check.clone();
         Box::pin(
             async move {
@@ -71,7 +71,7 @@ impl Handler<CheckReq> for ServiceA {
                         }
                     },
                     None => {
-                        println!("ServiceA: No downstream, cannot provide service.");
+                        println!("Service A: No downstream, cannot provide service.");
                         
                         // Send the response back via the channel
                         let _ = msg.reply_with.send(CheckResp { can_do: false });
@@ -101,11 +101,11 @@ impl Handler<ServiceReq> for ServiceA {
                                 Ok(res)
                             },
                             Err(err) => {
-                                Err(format!("Error: ServiceA received downstream {}.", err))
+                                Err(format!("Error: Service A received downstream {}.", err))
                             }
                         }
                     }
-                    None => Err(format!("Error: ServiceA has no downstream service.")),
+                    None => Err(format!("Error: Service A has no downstream service.")),
                 }
             }
             .into_actor(self),
@@ -119,6 +119,6 @@ impl Handler<InlineConfig> for ServiceA {
     fn handle(&mut self, msg: InlineConfig, _ctx: &mut Self::Context) -> Self::Result {
         self.downstream_check = Some(msg.downstream_check);
         self.downstream_service = Some(msg.downstream_service);
-        println!("ServiceA configured.");
+        println!("Service A: configured.");
     }
 }
