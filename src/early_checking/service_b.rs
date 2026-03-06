@@ -1,12 +1,11 @@
 use actix::prelude::*;
 use log::{error, trace};
-
+use std::env;
 use super::messages::{CheckReq, CheckResp, InlineConfig, ServiceReq, ServiceResult};
 
 pub struct ServiceB {
     downstream_check: Option<Recipient<CheckReq>>,
     downstream_service: Option<Recipient<ServiceReq>>,
-    can_do: bool,
 }
 
 impl Actor for ServiceB {
@@ -18,14 +17,17 @@ impl ServiceB {
         Self {
             downstream_check: None,
             downstream_service: None,
-            can_do: true
         }
     }
 
     fn can_do(&mut self) -> bool {
-        self.can_do = !self.can_do;
-        self.can_do
-    }
+match env::var("FAILING_SERVICE") {
+            Ok(val) => {
+                !matches!(val.as_str(), "B")
+            },
+            _ => true            
+        } 
+            }
 }
 
 impl Handler<CheckReq> for ServiceB {
@@ -34,12 +36,12 @@ impl Handler<CheckReq> for ServiceB {
     fn handle(&mut self, msg: CheckReq, _ctx: &mut Self::Context) -> Self::Result {
         trace!("Service B processing CheckReq...");
         if !self.can_do() {
-            trace!("Service B: cannot provide service for my own reasons.");
+            error!("Service B: cannot provide service for my own reasons.");
 
             // Send the response back via the channel
             let _ = msg.reply_with.send(CheckResp { can_do: false });
 
-            return Box::pin(async { () }.into_actor(self));
+            return Box::pin(async { }.into_actor(self));
         }
 
         trace!("Service B: forwarding CheckReq to downstream...");
@@ -88,7 +90,7 @@ impl Handler<ServiceReq> for ServiceB {
     type Result = ResponseActFuture<Self, Result<ServiceResult, String>>;
 
     fn handle(&mut self, msg: ServiceReq, _ctx: &mut Self::Context) -> Self::Result {
-        println!("Service B: processing ServiceReq: {}", msg.data);
+        trace!("Service B: processing ServiceReq: {}", msg.data);
         
         let service = self.downstream_service.clone();
         Box::pin(
@@ -123,4 +125,4 @@ impl Handler<InlineConfig> for ServiceB {
         self.downstream_service = Some(msg.downstream_service);
         trace!("Service B: configured.");
     }
-}
+}   

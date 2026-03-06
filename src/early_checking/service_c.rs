@@ -1,11 +1,9 @@
-use actix::prelude::*;
-use log::trace;
-
 use super::messages::{CheckReq, CheckResp, ServiceReq, ServiceResult};
+use actix::prelude::*;
+use log::{error, trace};
+use std::env;
 
-pub struct ServiceC {
-    can_do: bool,
-}
+pub struct ServiceC {}
 
 impl Actor for ServiceC {
     type Context = Context<Self>;
@@ -13,14 +11,14 @@ impl Actor for ServiceC {
 
 impl ServiceC {
     pub fn new() -> Self {
-        Self {
-            can_do: true,
-        }
+        Self {}
     }
 
     fn can_do(&mut self) -> bool {
-        // self.can_do = !self.can_do;
-        self.can_do
+        match env::var("FAILING_SERVICE") {
+            Ok(val) => !matches!(val.as_str(), "C"),
+            _ => true,
+        }
     }
 }
 
@@ -32,14 +30,14 @@ impl Handler<CheckReq> for ServiceC {
 
         if self.can_do() {
             trace!("Service C: can provide service.");
-            let _ = msg.reply_with.send(CheckResp { can_do: true});
+            let _ = msg.reply_with.send(CheckResp { can_do: true });
         } else {
-            trace!("Service C: cannot provide service !");
-            let _ = msg.reply_with.send(CheckResp { can_do: false});
+            error!("Service C: cannot provide service for my own reasons.");
+            let _ = msg.reply_with.send(CheckResp { can_do: false });
         }
 
         // since we reply with the recipient delivereed in the msg, we always just return ()
-        return Box::pin(async { () }.into_actor(self));
+        Box::pin(async { }.into_actor(self))
     }
 }
 
@@ -47,11 +45,10 @@ impl Handler<ServiceReq> for ServiceC {
     type Result = Result<ServiceResult, String>;
     fn handle(&mut self, msg: ServiceReq, _ctx: &mut Self::Context) -> Self::Result {
         trace!("Service C processing ServiceReq: {}", msg.data);
-        
+
         // this Service never fails...
-        Ok(ServiceResult { 
-            result: format!("{}: Service C", msg.data)
+        Ok(ServiceResult {
+            result: format!("{}: Service C", msg.data),
         })
-            
     }
 }
