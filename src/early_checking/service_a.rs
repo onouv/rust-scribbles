@@ -1,12 +1,12 @@
 
 use actix::prelude::*;
-use log::{error, trace, info};
+use log::{error, trace};
 use super::messages::{CheckReq, CheckResp, InlineConfig, ServiceReq, ServiceResult};
+use std::env;
 
 pub struct ServiceA {
     downstream_check: Option<Recipient<CheckReq>>,
     downstream_service: Option<Recipient<ServiceReq>>,
-    can_do: bool,
 }
 
 impl Actor for ServiceA {
@@ -18,12 +18,16 @@ impl ServiceA {
         Self {
             downstream_check: None,
             downstream_service: None,
-            can_do: true,
         }
     }
 
     fn can_do(&mut self) -> bool {
-        self.can_do
+        match env::var("FAILING_SERVICE") {
+            Ok(val) => {
+                !matches!(val.as_str(), "A")
+            },
+            _ => true            
+        } 
     }
 }
 
@@ -33,12 +37,12 @@ impl Handler<CheckReq> for ServiceA {
     fn handle(&mut self, msg: CheckReq, _ctx: &mut Self::Context) -> Self::Result {
         trace!("Service A processing CheckReq...");
         if !self.can_do() {
-            info!("Service A: cannot provide service for my own reasons.");
+            error!("Service A: cannot provide service for my own reasons.");
 
             // Send the response back via the channel
             let _ = msg.reply_with.send(CheckResp { can_do: false });
 
-            return Box::pin(async { () }.into_actor(self));
+            return Box::pin(async {  }.into_actor(self));
         }
 
         trace!("Service A: forwarding CheckReq to downstream...");
