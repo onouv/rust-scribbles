@@ -21,25 +21,38 @@ Therefore, when receiving a  `Start` message, the `Controller` runs a quick chec
 
 ![Sequence](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/onouv/rust-scribbles/early-async-checking/doc/setup.seq.puml)
 
+The actors can be controlled to block the precheck from the command line like so:
+```
+RUST_LOG=info FAILING_SERVICE=A cargo run
+RUST_LOG=info FAILING_SERVICE=B cargo run
+RUST_LOG=info FAILING_SERVICE=C cargo run
+```
 
-To try this example, open a shell and run 
+To try this happy-path example, open a shell and run 
 ```
 git clone https://github.com/onouv/rust-scribbles.git
 git checkout early-async-checking
-cargo run 
+RUST_LOG=info cargo run 
 ```
 The output will demonstrate the interactions of the checking and request processing phases for the happy case: 
 
 ```
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::controller] Controller: configured.
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::service_a] Service A: configured.
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::service_b] Service B: configured.
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::controller] Controller: processing Start message...
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::controller] Controller: initiating check chain...
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::service_a] Service A processing CheckReq...
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::service_a] Service A: forwarding CheckReq to downstream...
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::service_b] Service B processing CheckReq...
-[2025-04-07T10:21:20Z TRACE scribbles::early_checking::service_b] Service B: cannot provide service for my own reasons.
-[2025-04-07T10:21:20Z ERROR scribbles] There has been an error. Service Blocked -> Controller: Cannot do service. Downstream chain is blocked.
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::controller] Controller: configured.
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_a] Service A: configured.
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_b] Service B: configured.
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::controller] Controller: processing Start message...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::controller] Controller: initiating check chain...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_a] Service A processing CheckReq...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_a] Service A: forwarding CheckReq to downstream...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_b] Service B processing CheckReq...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_b] Service B: forwarding CheckReq to downstream...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_c] Service C processing CheckReq...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_c] Service C: can provide service.
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::controller] Controller: initiating service chain...
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_a] Service A: received ServiceReq: Start
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_b] Service B: processing ServiceReq: Start: ServiceA
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::service_c] Service C processing ServiceReq: Start: ServiceA: Service B
+[2026-03-06T13:30:03Z TRACE scribbles::early_checking::controller] Controller: Start result: "Start: ServiceA: Service B: Service C"
+[2026-03-06T13:30:03Z INFO  scribbles] Actor system started.
 
 ```
