@@ -32,7 +32,7 @@ To try this happy-path example, open a shell and run
 ```
 git clone https://github.com/onouv/rust-scribbles.git
 git checkout early-async-checking
-RUST_LOG=info cargo run 
+RUST_LOG=trace cargo run 
 ```
 The output will demonstrate the interactions of the checking and request processing phases for the happy case: 
 
